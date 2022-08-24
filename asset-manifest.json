@@ -1,0 +1,15 @@
+{
+  "files": {
+    "main.css": "/wellness-labs/static/css/main.d07a959b.css",
+    "main.js": "/wellness-labs/static/js/main.fb02f6d0.js",
+    "static/js/787.c99011ff.chunk.js": "/wellness-labs/static/js/787.c99011ff.chunk.js",
+    "index.html": "/wellness-labs/index.html",
+    "main.d07a959b.css.map": "/wellness-labs/static/css/main.d07a959b.css.map",
+    "main.fb02f6d0.js.map": "/wellness-labs/static/js/main.fb02f6d0.js.map",
+    "787.c99011ff.chunk.js.map": "/wellness-labs/static/js/787.c99011ff.chunk.js.map"
+  },
+  "entrypoints": [
+    "static/css/main.d07a959b.css",
+    "static/js/main.fb02f6d0.js"
+  ]
+}
