@@ -28,11 +28,13 @@ import {
   statDefinitionsState,
 } from "../store";
 
+const ROOT_PATH = "wellness-labs";
+
 export const Root = () => (
   <RecoilRoot>
     <BrowserRouter>
       <Routes>
-        <Route path="/" element={<Container />}>
+        <Route path={`/${ROOT_PATH}`} element={<Container />}>
           <Route index element={<Home />}></Route>
           <Route path="statsCheckin" element={<StatsCheckin />}>
             <Route index element={<div>checkin today or another date?</div>} />
