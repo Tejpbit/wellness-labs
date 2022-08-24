@@ -1,12 +1,6 @@
 import _ from "lodash";
 import { useState } from "react";
-import {
-  BrowserRouter,
-  Outlet,
-  Route,
-  Routes,
-  useNavigate,
-} from "react-router-dom";
+import { BrowserRouter, Outlet, Route, Routes } from "react-router-dom";
 import {
   RecoilRoot,
   useRecoilState,
@@ -17,6 +11,7 @@ import styled from "styled-components";
 import { Button } from "../components/Button";
 import { ProgressIndicator } from "../components/ProgressIndicator";
 import { StatCheckin } from "../components/StatCheckin";
+import { useNavigateWithPageRoot } from "../hooks/useNavigateWithPageRoot";
 import { Home } from "../pages/Home";
 import { LogOverview } from "../pages/LogOverview";
 import { Statistics } from "../pages/Statistics";
@@ -28,7 +23,7 @@ import {
   statDefinitionsState,
 } from "../store";
 
-const ROOT_PATH = "wellness-labs";
+export const ROOT_PATH = "wellness-labs";
 
 export const Root = () => (
   <RecoilRoot>
@@ -170,7 +165,7 @@ interface FinishCheckinPageProps {
 const FinishCheckinPage: React.FC<FinishCheckinPageProps> = ({
   editCheckin,
 }) => {
-  const navigate = useNavigate();
+  const navigate = useNavigateWithPageRoot();
   return (
     <Column justifyContent="space-between">
       <Column justifyContent="center">

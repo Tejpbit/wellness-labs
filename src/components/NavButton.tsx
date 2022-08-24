@@ -1,5 +1,5 @@
-import { useNavigate } from "react-router-dom";
 import styled from "styled-components";
+import { useNavigateWithPageRoot } from "../hooks/useNavigateWithPageRoot";
 
 interface NavButtonProps {
   to: string;
@@ -7,7 +7,7 @@ interface NavButtonProps {
 }
 
 export const NavButton: React.FC<NavButtonProps> = ({ text, to }) => {
-  const navigate = useNavigate();
+  const navigate = useNavigateWithPageRoot();
   return (
     <NavButtonContainer onClick={() => navigate(to)}>{text}</NavButtonContainer>
   );
