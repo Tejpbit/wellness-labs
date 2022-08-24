@@ -1,10 +1,10 @@
+import Moment from "moment";
 import { Outlet } from "react-router-dom";
 import { useRecoilState } from "recoil";
+import styled from "styled-components";
 import { Button } from "../components/Button";
 import { Column, Row } from "../containers/Root";
 import { selectedDateState } from "../store";
-import Moment from "moment";
-import styled from "styled-components";
 
 export const StatsCheckin: React.FC = () => {
   const [selectedDate, setSelectedDate] = useRecoilState(selectedDateState);

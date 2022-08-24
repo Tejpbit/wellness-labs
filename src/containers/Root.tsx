@@ -18,13 +18,14 @@ import { Button } from "../components/Button";
 import { ProgressIndicator } from "../components/ProgressIndicator";
 import { StatCheckin } from "../components/StatCheckin";
 import { Home } from "../pages/Home";
+import { LogOverview } from "../pages/LogOverview";
 import { Statistics } from "../pages/Statistics";
 import { StatsCheckin } from "../pages/StatsCheckin";
 import {
+  LogEntry,
   selectedDateState,
   singleStatWriter,
   statDefinitionsState,
-  StatLogEntry,
 } from "../store";
 
 export const Root = () => (
@@ -39,6 +40,7 @@ export const Root = () => (
             <Route path="today" element={<StatsCheckinForm />} />
           </Route>
           <Route path="statistics" element={<Statistics />} />
+          <Route path="logOverview" element={<LogOverview />} />
         </Route>
       </Routes>
     </BrowserRouter>
@@ -85,8 +87,9 @@ const StatsCheckinForm = () => {
             key={statDef.name}
             checkinTimestamp={checkinTimestamp}
             statDefinition={statDef}
-            paramSubmitted={(stat: StatLogEntry) => {
-              writeStatToLog(stat);
+            paramSubmitted={(logEntry: LogEntry) => {
+              console.log("Entry to write", logEntry);
+              writeStatToLog(logEntry);
               goToNextStat();
             }}
           />

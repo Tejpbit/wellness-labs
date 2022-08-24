@@ -14,15 +14,11 @@ import { useRecoilValue } from "recoil";
 import styled from "styled-components";
 import { DateAndRangeEditBar } from "../components/DateAndRangeEditBar";
 import { Column, FlexBox, Row } from "../containers/Root";
-import {
-  statDefinitionsState,
-  StatLogEntry,
-  statsCheckinLogState,
-} from "../store";
+import { statDefinitionsState, StatLogEntry, statLogState } from "../store";
 
 export const Statistics = () => {
   const statDefinitions = useRecoilValue(statDefinitionsState);
-  const statCheckinLog = useRecoilValue(statsCheckinLogState);
+  const statCheckinLog = useRecoilValue(statLogState);
 
   const [activeStats, setActiveStats] = useState(
     statDefinitions.map((it) => it.name)

@@ -5,6 +5,8 @@ import styled from "styled-components";
 import { Column, Row } from "../containers/Root";
 import {
   BadMediumGoodGridInputs,
+  LogEntry,
+  LogType,
   selectLastCheckinForStat,
   StatDefinition,
   StatInputUiType,
@@ -13,11 +15,11 @@ import {
 
 interface StatCheckinParams {
   statDefinition: StatDefinition;
-  paramSubmitted: (statLogEntry: StatLogEntry) => void;
+  paramSubmitted: (LogEntry: LogEntry) => void;
   checkinTimestamp: moment.Moment;
 }
 
-type GridIndices = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8;
+type GridIndex = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8;
 
 export const StatCheckin: React.FC<StatCheckinParams> = ({
   statDefinition,
@@ -43,13 +45,9 @@ export const StatCheckin: React.FC<StatCheckinParams> = ({
       </Row>
       <StatInputSelector
         inputType={statDefinition.inputType}
-        onInput={(rating) =>
-          paramSubmitted({
-            name: statDefinition.name,
-            rating: rating,
-            timestamp: checkinTimestamp.toISOString(),
-          })
-        }
+        name={statDefinition.name}
+        onInput={(logEntry) => paramSubmitted(logEntry)}
+        checkinTimestamp={checkinTimestamp}
       />
     </Column>
   );
@@ -58,11 +56,15 @@ export const StatCheckin: React.FC<StatCheckinParams> = ({
 export const StatInputSelector = ({
   inputType,
   onInput,
+  name,
+  checkinTimestamp,
 }: {
   inputType: StatInputUiType;
-  onInput: (statLogEntry: number) => void;
+  onInput: (statLogEntry: LogEntry) => void;
+  name: string;
+  checkinTimestamp: Moment.Moment;
 }) => {
-  const [selected, setSelected] = useState<GridIndices | undefined>(undefined);
+  const [selected, setSelected] = useState<GridIndex | undefined>(undefined);
 
   switch (inputType.type) {
     case "BadMediumGoodGrid":
@@ -72,8 +74,14 @@ export const StatInputSelector = ({
             descriptions={inputType.inputs}
             selected={selected}
             onSelect={(option) => {
+              const entry: StatLogEntry = {
+                type: "statLogEntry",
+                name: name,
+                rating: option,
+                timestamp: checkinTimestamp.toISOString(),
+              };
               setSelected(option);
-              onInput(option);
+              onInput(entry);
             }}
           />
         </>
@@ -85,8 +93,8 @@ export const StatInputSelector = ({
 
 interface BadMediumGoodGridProps {
   descriptions: BadMediumGoodGridInputs;
-  selected?: GridIndices;
-  onSelect: (selected: GridIndices) => void;
+  selected?: GridIndex;
+  onSelect: (selected: GridIndex) => void;
 }
 
 const BadMediumGoodGrid: React.FC<BadMediumGoodGridProps> = ({

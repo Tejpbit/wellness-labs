@@ -1,11 +1,11 @@
-import _ from "lodash";
-import Moment from "moment";
+import _ from "lodash/fp";
+import moment from "moment";
 import {
   atom,
   AtomEffect,
   DefaultValue,
   selector,
-  selectorFamily
+  selectorFamily,
 } from "recoil";
 
 export type StatInputUiType = BadMediumGoodGrid;
@@ -33,21 +33,36 @@ export interface StatDefinition {
   inputType: StatInputUiType;
 }
 
+export type LogEntry = StatLogEntry | SleepLogEntry;
+
 // Think stat as in pokémon stat. An attribute that describes some performance
 export interface Stat {
   name: string;
   rating: number;
 }
 
-export interface StatCheckin {
+export type LogType = "statLogEntry" | "sleepLogEntry" | "noteLogEntry";
+
+export interface LogEntryBase {
+  type: LogType;
   timestamp: string;
-  stats: Array<Stat>;
 }
 
-export interface StatLogEntry {
+export interface StatLogEntry extends LogEntryBase {
+  type: "statLogEntry";
   name: string;
   rating: number;
-  timestamp: string;
+  note?: string;
+}
+
+export interface SleepLogEntry extends LogEntryBase {
+  type: "sleepLogEntry";
+  wakeOrSleep: "wake" | "sleep";
+}
+
+export interface NoteLogEntry extends LogEntryBase {
+  type: "noteLogEntry";
+  note: string;
 }
 
 export interface Experiment {
@@ -83,15 +98,15 @@ const localStorageEffect =
 // which messes with react re-rendering
 export const selectedDateState = atom({
   key: "selectedDateState",
-  default: Moment(),
+  default: moment(),
 });
 
-export const statsCheckinLogState = atom<Array<StatLogEntry>>({
+export const logState = atom<Array<LogEntry>>({
   key: "statsCheckinLogState",
   default: [] as Array<StatLogEntry>,
   effects: [
     ({ onSet, setSelf }) => {
-      onSet((newValue) => setSelf(_.sortBy(newValue, (it) => it.timestamp)));
+      onSet((newValue) => setSelf(_.sortBy((it) => it.timestamp, newValue)));
     },
     localStorageEffect("statsCheckinLogState"),
     ({ onSet }) => {
@@ -110,38 +125,22 @@ export const selectLastCheckinForStat = selectorFamily<
   get:
     (statName) =>
     ({ get }) => {
-      const statsLog = get(statsCheckinLogState);
-      return _.chain(statsLog)
-        .filter((it) => it.name === statName)
-        .sortBy((it) => it.timestamp)
-        .first()
-        .value();
+      const statsLog = get(logState);
+      const entriesForStatName = statsLog
+        .filter<StatLogEntry>(
+          (it): it is StatLogEntry => it.type === "statLogEntry"
+        )
+        .filter((it) => it.name === statName);
+      const sortedEntriesForStatName = _.sortBy(
+        (it) => it.timestamp,
+        entriesForStatName
+      );
+      return sortedEntriesForStatName[0];
     },
 });
 
 // Only use this for writing. I.e. with useSetRecoilState
-export const statsCheckinWriter = selector<StatCheckin>({
-  key: "statsCheckinWriter",
-  get: () => {
-    throw Error("This selector family should only be used to write state");
-  },
-
-  set: ({ set }, newValue) => {
-    if (newValue instanceof DefaultValue) {
-      // TODO this makes it so we cannot reset the atom from this selector. Might not be right
-      set(statsCheckinLogState, (prevState) => prevState);
-    } else {
-      const logEntries = newValue.stats.map((it) => ({
-        ...it,
-        timestamp: newValue.timestamp,
-      }));
-      set(statsCheckinLogState, (prevState) => [...prevState, ...logEntries]);
-    }
-  },
-});
-
-// Only use this for writing. I.e. with useSetRecoilState
-export const singleStatWriter = selector<StatLogEntry>({
+export const singleStatWriter = selector<LogEntry>({
   key: "singleStatWriter",
   get: () => {
     throw Error("This selector family should only be used to write state");
@@ -150,12 +149,146 @@ export const singleStatWriter = selector<StatLogEntry>({
   set: ({ set }, logEntry) => {
     if (logEntry instanceof DefaultValue) {
       // TODO this makes it so we cannot reset the atom from this selector. Might not be right
-      set(statsCheckinLogState, (prevState) => prevState);
+      set(logState, (prevState) => prevState);
     } else {
-      set(statsCheckinLogState, (prevState) => [...prevState, logEntry]);
+      set(logState, (prevState) => [...prevState, logEntry]);
     }
   },
 });
+
+export const statLogState = selector<Array<StatLogEntry>>({
+  key: "statLogState",
+  get: ({ get }) =>
+    get(logState).filter(
+      (it): it is StatLogEntry => it.type === "statLogEntry"
+    ),
+});
+
+export const sleepLogState = selector<Array<SleepLogEntry>>({
+  key: "sleepLog",
+  get: ({ get }) =>
+    get(logState).filter(
+      (it): it is SleepLogEntry => it.type === "sleepLogEntry"
+    ),
+});
+
+export interface DayData {
+  date: moment.Moment;
+  wakeupTime: moment.Moment;
+  goToSleepTime: moment.Moment;
+  stats: Record<string, StatLogEntry>;
+  comment: string;
+}
+
+// Partial since we don't know if the user has filled in all information
+export type DayLogOverviewState = Record<string, Partial<DayData>>;
+
+export type DateRange = {
+  from: moment.Moment;
+  to: moment.Moment;
+};
+
+export const dayLogOverviewState = selectorFamily<
+  DayLogOverviewState,
+  DateRange
+>({
+  key: "dayLogOverviewState",
+  get:
+    ({ from, to }) =>
+    ({ get }) => {
+      // const logsForDay = get(logState).filter((it) =>
+      //   Moment(it.timestamp).isSame(date, "day")
+      // );
+
+      // const sleepLogEntries = logsForDay.filter(
+      //   (it): it is SleepLogEntry => it.type === "sleepLogEntry"
+      // );
+      // const wakeupTime = sleepLogEntries.find(
+      //   (it) => it.wakeOrSleep === "wake"
+      // )?.timestamp;
+      // const goToSleepTime = sleepLogEntries.find(
+      //   (it) => it.wakeOrSleep === "sleep"
+      // )?.timestamp;
+
+      return generateFakeDayLogOverviewState();
+    },
+});
+
+function generateFakeDayLogOverviewState(): DayLogOverviewState {
+  const obj: DayLogOverviewState = {};
+  const now = moment();
+  _.range(0, 100).forEach((it) => {
+    const fakeDayData = generateFakeDayData(moment(now).subtract(it, "days"));
+    if (fakeDayData.date) obj[fakeDayData.date.toISOString()] = fakeDayData;
+  });
+  return obj;
+}
+
+function generateFakeDayData(day: moment.Moment): Partial<DayData> {
+  const hasWakeupTime = _.random(0, 1) < 0.5 ? true : false;
+  const hasGoToSleepTime = _.random(0, 1) < 0.5 ? true : false;
+  const hasVärklös = _.random(0, 1) < 0.5 ? true : false;
+  const hasGlädjefylld = _.random(0, 1) < 0.5 ? true : false;
+  const hasEnergirik = _.random(0, 1) < 0.5 ? true : false;
+  const hasAvslappnad = _.random(0, 1) < 0.5 ? true : false;
+  const hasHarmonisk = _.random(0, 1) < 0.5 ? true : false;
+  const hasWorkload = _.random(0, 1) < 0.5 ? true : false;
+  const hasComment = _.random(0, 1) < 0.5 ? true : false;
+
+  const obj: Partial<DayData> = {
+    date: moment(day).startOf("day"),
+    stats: {},
+  };
+  if (hasWakeupTime)
+    obj.wakeupTime = moment(day)
+      .startOf("day")
+      .add(_.random(440, 520), "minutes");
+  if (hasGoToSleepTime)
+    obj.goToSleepTime = moment(day)
+      .endOf("day")
+      .subtract(_.random(60, 120), "minutes");
+
+  const createLogEntry = (keyName: string): StatLogEntry => ({
+    name: "keyName",
+    rating: _.random(1, 9),
+    timestamp: logEntryTime.toISOString(),
+    type: "statLogEntry",
+  });
+
+  const logEntryTime = moment(day)
+    .startOf("day")
+    .add(_.random(480, 600), "minutes");
+  if (hasVärklös && obj.stats) obj.stats["Värklös"] = createLogEntry("Värklös");
+  if (hasGlädjefylld && obj.stats)
+    obj.stats["Glädjefylld"] = createLogEntry("Glädjefylld");
+  if (hasEnergirik && obj.stats)
+    obj.stats["Energirik"] = createLogEntry("Energirik");
+  if (hasHarmonisk && obj.stats)
+    obj.stats["Harmonisk"] = createLogEntry("Harmonisk");
+  if (hasAvslappnad && obj.stats)
+    obj.stats["Avslappnad"] = createLogEntry("Avslappnad");
+  if (hasWorkload && obj.stats)
+    obj.stats["Workload"] = createLogEntry("Workload");
+  if (hasComment && obj.stats) obj.comment = "Very nice string";
+
+  return obj;
+}
+
+function extractDayDatasForDateRange(
+  log: Array<LogEntry>,
+  dateRange: DateRange
+): DayLogOverviewState {
+  const acc: DayLogOverviewState = {};
+
+  log.forEach((it) => {
+    const m = moment(it.timestamp);
+    if (m.isBetween(dateRange.from, dateRange.to)) {
+      acc[m.startOf("day").toISOString()] = {};
+    }
+  });
+
+  return acc;
+}
 
 var colorArray = [
   "#FF6633",
