@@ -1,5 +1,5 @@
 import _ from "lodash";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   HashRouter,
   Outlet,
@@ -28,14 +28,11 @@ import {
   statDefinitionsState,
 } from "../store";
 
-export const ROOT_PATH =
-  process.env.NODE_ENV === "development" ? "" : "wellness-labs";
-
 export const Root = () => (
   <RecoilRoot>
     <HashRouter>
       <Routes>
-        <Route path={`/${ROOT_PATH}`} element={<Container />}>
+        <Route path={"/"} element={<Container />}>
           <Route index element={<Home />}></Route>
           <Route path="statsCheckin" element={<StatsCheckin />}>
             <Route index element={<div>checkin today or another date?</div>} />
